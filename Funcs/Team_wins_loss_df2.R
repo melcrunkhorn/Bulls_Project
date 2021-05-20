@@ -60,7 +60,8 @@ view(df_Stats1_Tm_W)
 ##Create right join from Stats_1 Wins and Losses, 
 ##Right join Stats1 Wins, Losses, and create Wins and Tm_Losses
 ## Change team variable name
-names(df_Stats1_Tm_W)[2] <- "Tm"
+df_Stats1_Tm_W <- df_Stats1_Tm_W %>%
+  rename(Tm = Team)
 
 player_stats_tidy <- player_stats_tidy %>%
   mutate(TOT = case_when(Tm == "MIL" ~ "nonTOT", 

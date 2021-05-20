@@ -104,8 +104,6 @@ df_IP_stats[df_IP_stats$player_name=="Mitch Creek", "player_name"] <- "Mitch Cre
 df_IP_stats[df_IP_stats$player_name=="JJ Barea", "player_name"] <- "Jose Juan"
 df_IP_stats[df_IP_stats$player_name=="Devonte' Graham", "player_name"] <- "Devonte Graham"
 
-view(df_IP_stats)
-
 
 #### Wrangling for player usage ratio: 
 ## Rename team stats with T_var
@@ -143,22 +141,20 @@ df_team_Stats2[df_team_Stats2$Team == "Cleveland Cavaliers", "Team"] <- "CLE"
 df_team_Stats2[df_team_Stats2$Team == "Memphis Grizzlies", "Team"] <- "MEM"
 df_team_Stats2[df_team_Stats2$Team == "New Orleans Pelicans", "Team"] <- "NOP"
 
-view(df_team_Stats2)
 
 ## change column name Team -> Tm
-names(df_team_Stats2)[2] <- "Tm"
-names(df_team_Stats2)[3] <- "Tm_G"
-names(df_team_Stats2)[4] <- "Tm_MP"
-names(df_team_Stats2)[6] <- "Tm_FGA"
-names(df_team_Stats2)[15] <- "Tm_FTA"
-names(df_team_Stats2)[23] <- "Tm_TOV"
+df_team_Stats2 <- df_team_Stats2 %>%
+  rename(Tm = Team,
+         Tm_MP = MP,
+         Tm_FGA = FGA,
+         Tm_FTA = FTA,
+         Tm_TOV = TOV,
+         Tm_G = G)
 
 ## Right join Tm data to facilitate Usage analysis
 df_IP_stats <- df_team_Stats2 %>%
   select(Tm, Tm_MP, Tm_FGA, Tm_FTA, Tm_TOV, Tm_G) %>%
   right_join(df_IP_stats, by="Tm")
-
-view(df_IP_stats)
 
 ## Filter/remove players TOT teams, as summary of stats done later
 df_TOT_players <- df_IP_stats[(df_IP_stats$Tm == "TOT"),]
@@ -177,7 +173,6 @@ df_IP_stats_no_dublicates <- df_IP_stats[!duplicated(df_IP_stats$player_name),]
 
 df_joined <- full_join(x = df_IP_stats, y = df_sal,
                        by = c("player_name"))
-view(df_joined)
 
 sum(is.na(df_joined))
 which(is.na(df_joined), arr.ind = TRUE)
@@ -192,8 +187,6 @@ filter(df_joined, is.na(df_joined$salary))
 df_joined <- replace_na(df_joined, list(salary = "unknown"))
 sum(is.na(df_joined))
 
-view(df_joined)
-
 ## player_id NAs
 df_joined %>%
   sum(is.na())
@@ -204,9 +197,7 @@ df_joined %>%
 df_joined <- replace_na(df_joined, list(player_id = "unknown"))
 sum(is.na(df_joined$player_id))
 
-view(df_joined)
-
-### df_na to assist typos and retirements
+### df_na to address typos and retirements
 
 data_na <- df_joined %>%
   filter(df_joined$salary == "unknown")
@@ -219,8 +210,6 @@ view(data_na)
 df_joined <- replace_na(df_joined, list(G = "unknown"))
 sum(is.na(df_joined))
 
-view(df_joined)
-
 df_joined %>%
   sum(is.na())
   which(is.na(df_joined), arr.ind = TRUE)
@@ -229,20 +218,17 @@ df_joined %>%
 data_na <- df_joined %>%
   filter(df_joined$G == "unknown")
 data_na
-view(data_na)
+
 
 ## Retired
 df_joined <- replace_na(df_joined, list(GS = "RET"))
 sum(is.na(df_joined))
 
-view(df_joined)
+
 
 ## remove retired players
 df_joined <- df_joined[!(df_joined$GS == "RET"),]
 
-tail(df_joined)
-
-view(df_joined)
 
 ## Change salary to numeric vector in df_joined
 df_joined$salary <- as.numeric(df_joined$salary)
@@ -282,7 +268,6 @@ df_joined <- df_joined %>%
 df_joined <- df_joined %>%
     relocate(Tm_G, .after = PTS)
 
-view(df_joined)
 
 ## Duplicates
 duplicated(df_joined$player_name)
@@ -291,14 +276,13 @@ which(duplicated(df_joined$player_name), arr.ind = TRUE)
 
  
 ## Rename df_joined Tidy column = 3P, 2P, 3PA, 2PA
-names(df_joined)[13] <- "X3P"
-names(df_joined)[14] <- "X3PA"
-names(df_joined)[16] <- "X2P"
-names(df_joined)[17] <- "X2PA"
 
-view(df_joined)
+df_joined <- df_joined %>%
+  rename(X3P = "3P",
+         X3PA = "3PA",
+         X2P = "2P",
+         X2PA = "2PA")
 
-str(df_joined)
 
 ## Usage100 * ((FGA + 0.44 * FTA + TOV) * (Tm MP / 5)) / (MP * (Tm FGA + 0.44 * Tm FTA + Tm TOV))
 
@@ -359,31 +343,25 @@ df_tidy <- df_joined %>%
             PF_MP = (sum(PF)/ MP),
             PTS_per_MP = (sum(PTS)/ MP),
             FTF_MP = (FTA/FGA) / MP,
-            Tm_use_total = sum(Tm_use))
-            
-view(df_tidy)  
+            Tm_use_total = sum(Tm_use)) %>%
+  ungroup()
+          
 
-ungroup(df_tidy)
-
-
-### Make new variables: EFF
+### Create new player metric variables: EFF
 
 df_tidy <- df_tidy %>%
   mutate(EFF = PTS + TRB + AST + STL + BLK - (FGA-FG) - (FTA-FT) -TOV / G)
 df_tidy
 
-view(df_tidy)
-
-## eFG stat
+## Create eFG statistic
 
 df_tidy <- df_tidy %>%
   mutate(eFGp = (X2P + (1.5*X3P))/ FGA)
 
-view(df_tidy)
 
 ##Using algorithms found online for the variables below:
 ##Trade Value Formula & Aprox Value & Credits
-# Credits Formula = Creds
+
 df_tidy <- df_tidy %>%
   mutate(Creds = (PTS)+(TRB)+(AST)+(STL)+(BLK)-(FGA - FG) - (FTA - FT) - (TOV))
 
@@ -395,12 +373,11 @@ df_tidy <- df_tidy %>%
 df_tidy <- df_tidy %>%
   mutate(TrV = ((df_tidy$ApproxV - 27 - 0.75 * df_tidy$Age)^2*(27 - 0.75 * df_tidy$Age + 1) * df_tidy$ApproxV) / 190 + (df_tidy$ApproxV) * 2 /13)
  
-### round to 4 digits
+### rounding to 4 digits 
 
 df_tidy <- df_tidy %>%
-  mutate(across(c(11:61), round, 4))
+  mutate(across(c(11:60), round, 4))
 
-view(df_tidy)
 
 sum(is.na(df_tidy))
 
@@ -428,23 +405,23 @@ df_tidy <- df_tidy %>%
 
   
 ##fix merged names (player_name)
-df_tidy <- df_tidy[-c(1,3,4)]
+df_tidy <- df_tidy[-c(1,4)]
 
-names(df_tidy)[2] <- "salary"
-names(df_tidy)[3] <- "player_name"
-names(df_tidy)[4] <- "Age"
+df_tidy <- df_tidy %>%
+  rename(player_name = player_name.y,
+         Age = Age.y)
 
 df_tidy <- df_tidy %>%
   relocate(eFGp, .after = MP)
 df_tidy <- df_tidy %>%
+  relocate(TrV, .after = MP)
+df_tidy <- df_tidy %>%
   relocate(EFF, .after = TrV)
 df_tidy <- df_tidy %>%
   relocate(Tm_use_total, .after = EFF)
-df_tidy <- df_tidy %>%
-  relocate(TrV, .after = MP)
 
 ## final double check and tidy.
-ungroup(df_tidy)
+ungroup(df_tidy <- df_tidy)
 duplicated(df_tidy$player_name)
 which(duplicated(df_tidy$player_name), arr.ind = TRUE)
 
@@ -454,4 +431,7 @@ duplicated(df_tidy_no_duplicates$player_name)
 which(duplicated(df_tidy_no_duplicates$player_name), arr.ind = TRUE)
 
 write_csv(df_tidy_no_duplicates, file = "data/tidy_data/player_stats_tidy.csv")
+write_csv(df_TOT_players, file = "data/tidy_data/df_TOT_players.csv")
+write_csv(df_team_Stats2, file = "data/tidy_data/df_team_Stats2.csv")
+write_csv(df_team_Stats1, file = "data/tidy_data/df_team_Stats1.csv")
 

@@ -1,30 +1,553 @@
 ---
-title: "Bulls_Project"
+title: "Chicago Bulls Project"
 author: "Mel Crunkhorn"
-date: "04/05/2021"
-output: html_document
+student id: "u3209032" 
+date: "18/05/2021"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+bibliography: References/references.bibtex
+csl: References/vancouver_access_date.csl
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+
+```{r setup, include=FALSE, cache=TRUE} 
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      error = FALSE,
+                      echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(broom)
+library(performance)
+library(psych)
+library(ggrepel)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r project_data_loading, cache=TRUE, include=FALSE}
+## NBA 18-19 Player stats and salaries
+player_stats_tidy <- readr::read_csv("data/tidy_data/player_stats_tidy.csv")
+## NBA 18-19 Transfer Player Stats
+df_ind_stats <- readr::read_csv("data/tidy_data/df_TOT_players.csv")
+## 18-19 NBA Stats 1
+df_team_Stats1 <- readr::read_csv("data/tidy_data/df_team_Stats2.csv")
+## 18-19 NBA Stats 2
+df_team_Stats2 <- readr::read_csv("data/tidy_data/df_team_Stats1.csv")
+## 2019-20 Pay roll team
+dfPay <- readr::read_csv("data/project_data/2019-20_nba_team-payroll.csv")# runs code but not in final document
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r processed_data, cache=TRUE, include=FALSE}
+## player_stats_tidy
+player_stats_tidy <- readr::read_csv("data/tidy_data/player_stats_tidy.csv")
+## Teams Stas for Win percentage
+df_Stats1_Tm_W <- readr::read_csv("data/tidy_data/df_team_Stats1.csv")
+## 18-19 Stats 1
+df_Stats2_Tm_W <- readr::read_csv("data/tidy_data/df_team_Stats2.csv")
+## df_nonTOT_clean
+df_nonTOT_clean <- readr::read_csv("data/tidy_data/df_nonTOT_clean.csv")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# Chicago Bulls Project 
+\
+\
+```{r logo, echo=FALSE, out.width = '100%'}
+knitr::include_graphics(rep("Images/Logo.png"))
+```
+
+
+## Introduction  
+<br>
+
+### Scenario  
+
+\
+The Chicago Bulls Basketball Team finished 27th out of 30 teams in the National Basketball Association (NBA) in the 2018-2019 season. As the data analyst for the Chicago Bulls a report must be generated for the General Manager detailing the best five starting players that the team can afford with their $118 million dollar player contract budget for the 2019-2020 season, leaving adequate budget for the remaining, non-starting players.  \
+\
+**The Question**  \
+\
+What player metrics are related to scoring points and team success in basketball?  \
+\
+What are the best five players on paper that can be selected within the Chicago Bull’s $118 million budget for the coming season, taking into account the remaining 10 non-starting players.  \
+<br>
+
+### Project Aim 
+
+\
+The aim of this project is to find the best five starting players, based on the player metrics related to point scoring for the Chicago Bulls within the $118 million dollar player contract budget for the 2019-2020 season.  \
+\
+This project will aim to provide information regarding what player metrics are related to scoring points and team success in basketball.  \
+\
+The results of this project will aim to improve the team’s winning percentage and overall finishing position in the NBA.  \
+<br>
+
+### Justification and Importance  
+\
+This project will assist with determining what player metrics contribute to scoring points in basketball, and thus fielding the most efficient team within the Chicago Bulls player contract budget.  \
+\
+The findings of this project will assist the General Manager and Chicago Bulls staff in selecting the best five starting players for their roster for the 2019-2020 NBA season, with the aim of improving the team’s overall finishing position in the competition.  \
+\
+If the team can improve their overall ranking they will be provided with a greater budget for the 2020-2021 season for player contracts, with the aim of further improving their success rate in subsequent seasons.  \
+<br>
+
+### Basketball Overview  
+\
+Basketball is a team sport, consisting of five on-court players at a given time. Players have specific positions, each with a unique role. The five positions in basketball are:  \
+\
+**Center:** This player is usually the tallest player, and is positioned near the basket. The main offensive role of the centre is to score close shots and win rebounds. Defensively, the center’s main role is to block their opponents’ shots and win the rebound on their missed attempts. [@Wikipedia_contributors2020-va]  \
+\
+**Power Forward:** The power forward has a similar role as the center position, playing near the basket. The power forward defends taller players and tries to win rebounds. The power forwards take longer range shots compared to the players in the center position. [@Wikipedia_contributors2020-va]  \
+\
+**Small Forward:** The small forwards plays against large and small players, covering a lot of ground all over the court. Small forwards score points close to the basket, but are able to score some long range shots as well. [@Wikipedia_contributors2020-va]  \
+\
+**Point Guard:** The point guard’s main role is to defend the opponent’s point guard and run the team’s offense. This player is usually the team’s best passer and dribbler, often trying to steal the ball from the opponent. [@Wikipedia_contributors2020-va]  \
+\
+**Shooting Guard:** This player is usually the team’s best shooter, and is able to make accurate long distance shots. The shooting guard is also a good dribbler. [@Wikipedia_contributors2020-va]  \
+<br>
+
+## Data Reading and Cleaning   
+
+### Data Sources and Variable Description   
+\
+The data for this project consists of five data sets, saved as .csv files.  \
+\
+1.	2018-19_nba_player-statistics.csv sourced from [basketball-reference.com](https://www.basketball-reference.com/leagues/NBA_2019_totals.html)  \
+\
+2.	2018-19_nba_player-salaries.csv sourced from [hoopshype.com/salaries]( https://hoopshype.com/salaries/)  
+
+3.	2019-20_nba_team_payroll.csv sourced from [hoopshype.com/salaries]( https://hoopshype.com/salaries/)  
+
+4.	2018-19_nba_team-statistics_1.csv sourced from [basketball-reference.com](https://www.basketball-reference.com/leagues/NBA_2019.html)  
+
+5.	2018-19_nba_team-statistics_2.csv sourced from [basketball-reference.com]( https://www.basketball-reference.com/leagues/NBA_2019.html)  
+
+A description of variables commonly used in basketball can be found by clicking on the hyperlink below:  
+
+[Glossary of Basketball Metrics](https://www.basketball-reference.com/about/glossary.html)  
+<br>
+
+### Data Cleaning Process  
+
+All data files were imported into an R script file (Bulls_Project), and went through a thorough data wrangling and cleaning process. The structure of the data sets were assessed, and explored for missing values. All missing values were replaced with a ‘0’. Further data cleaning was employed to handle discrepancies in observations for player names, eg: Patty Mills and Patrick Mills, and code was written to combine the two rows into one row observation. This method of data cleaning was applied to the remaining discrepancies in the player_name variable.  
+
+Next, the df_IP_Stats data frame was joined to the df_sal data frame using the full_join function, grouping by player_name. The missing values in this data frame were renamed “unknown” to assist in identifying any data entry errors, or those players who had retired. This resulted in one player (Mitchell Creek) being removed from the data set due to having a double salary, and two players being removed who had retired and had no playing data. The salary, G, and GS variables were then converted to numeric variables and Pos to a factor in the new data_joined data frame so further cleaning and analysis could continue. Columns beginning with a numeric value were renamed in accordance with tidyverse and R conventions, and the data frame was then screened for any duplicates. Duplicates were handled using the group_by and collapse functions, grouping by player_id, player_name and age variables.  
+
+New player metric variables were created using the sum function, and points_per_game, points_per_minute and assist turnover variables were created. These variables were then normalised to a value related to minutes of game play to assist with further analysis and comparisons. The new values were then rounded to four decimal places, and this function was applied to each relevant numeric value in the data frame. This now tidy data frame was exported to a .csv file which was used for the exploratory analysis and data modelling and results sections of this report.  
+
+The exported tidy data frame was read in to a separate R script (teams_wins_loss_df2), where further data wrangling occurred to join the team statistics from team_Stats1.csv and team_Stats2.csv. A new nonTOT data frame was created to contain only players that had played for the one team. The file containing these players was exported to a .csv file for use in the data modelling and results of the analysis.  
+
+In the Exploratory_Analysis_2 and the Bulls_multiple_linear_regression_final script, the df_nonTOT_clean.csv file was read in, and a winning percentage per team variable was created to be used in the exploratory analysis and regression models. New data frames for each position were created and a .csv file was exported for each position. This completed the data wrangling process and the exploratory analysis and modelling components of the project were ready to commence.   
+<br>
+
+### Player Metrics Included in the Analysis  
+
+**Effective Field Goal Percentage (eFG)**  
+
+Effective field goal percentage is a useful metric to assess a player’s field goal percentage, as it takes into account the fact that a three-point field goal is worth more than a two-point field goal.[@Fromal2012-yb]  
+
+```{r eFGP_eq, echo=FALSE, fig.cap="eFG% calculation", out.width = '100%'}
+knitr::include_graphics(rep("Images/eFGp.png"))
+```
+
+**Player Efficiency (EFF)**  
+
+The player efficiency (EFF) metric was included in the analysis as it provides an overall total performance statistic that measures a player’s performance above the number of points produced, by summing the positive actions (points, rebounds, assists, steals, and blocks), and subtracting the negative actions (missed field goals, missed free throws, and turnovers). [@Wikipedia_contributors2020-va]  
+
+```{r EFF_eq, echo=FALSE, fig.cap="EFF calculation", out.width = '100%'}
+knitr::include_graphics(rep("Images/EFF.png"))
+```
+
+**Total Rebounds per Minute TRB_MP**  
+
+Totalrebounds per minute is the total number of offensive and defensive rebounds divided by minutes played.[@Fromal2012-yb]  
+
+```{r TRB_MP_eq, echo=FALSE, fig.cap="TRB_MP calculation", out.width = '100%'}
+knitr::include_graphics(rep("Images/TRB_MP.png"))
+```
+
+**Team Usage**  
+
+Team usage is the total amount of time that the player is on the court being used by the team during a game or season. This metric was included in the model, as the higher a player’s usage figure is, the more likely that the team values that player as an integral component of the team whilst on court.[@Wikipedia_contributors2020-va]  
+
+**Trade Value**  
+
+Trade Value estimated using a player's age and approximate value, as an indication of how much value a player has remaining in their career.[@noauthor_2017-ug]  
+
+```{r TrV_eq, echo=FALSE, fig.cap="TrV calculation", out.width = '100%'}
+knitr::include_graphics(rep("Images/TrV.png"))
+```
+
+**Points per minute**  
+
+Points per minute was included in the analysis to accurately compare points across players. Per-minute ratings were also used to calculate players’ totals in other metrics including points, steals, blocks, assists, turnovers etc, and  are calculated by taking the player's total in the relevant metric and dividing by the total of minutes played. [@Wikipedia_contributors2020-va]  
+
+**Win percentage**  
+
+To calculate winning percentage, the number of wins is divided by the number of games played. Team winning percentage was included in the model to explore the relationship of the individual player metrics and their contribution to a team’s winning percentage. [@Wikipedia_contributors2020-va]  
+<br>
+
+## Exploratory Analysis
+
+
+```{r source_exploratory_analysis, include=FALSE, cache = TRUE}
+source("funcs/Exploratory_Analysis_2.R", local = TRUE)
+```
+\
+Player who played 40 or more games during the season were filtered out of the dataset to ensure that the top players who played a large proportion of the games for the season were included in the analysis.  \
+\
+### Distribution of Data
+
+**Distribution of eFGp**  \
+\
+
+```{r reload1, include=FALSE}
+df_nonTOT_clean <- readr::read_csv("data/tidy_data/df_nonTOT_clean.csv")
+```
+
+
+```{r source_linear_analysis, echo=FALSE, include=FALSE}
+
+source("funcs/Exploratory_Analysis_2.R", local = TRUE)
+
+```
+
+```{r eFGp_hist, echo=FALSE}
+ggplot(data = df_nonTOT_clean) +
+  geom_histogram(mapping = aes(x = eFGp), colour = "black", fill = "dodgerblue")
+```
+
+The graph above demonstrates a normal distribution for the variable eFGp.  \
+\
+**Distribution of EFF**  
+/
+
+```{r D_EFF, echo=FALSE}
+ggplot(data = df_nonTOT_clean) +
+  geom_histogram(mapping = aes(x = EFF), colour = "black", fill = "dodgerblue")
+```
+
+The graph above demonstrates a left skewed distribution of data for the variable   \
+\
+
+**Distribution of TRB_MP**  /
+/
+```{r D_TRB_MP, echo=FALSE}
+ggplot(data = df_nonTOT_clean) +
+  geom_histogram(mapping = aes(x = TRB_MP), colour = "black", fill = "dodgerblue")
+```
+
+The graph above demonstrates a right skewed distribution of data for the variable TRB_MP.  \
+\
+
+**Distribution of TrV**  /
+/
+```{r D_TrV, echo=FALSE}
+ggplot(data = df_nonTOT_clean) +
+  geom_histogram(mapping = aes(x = TrV), colour = "black", fill = "dodgerblue")
+```
+
+The graph above demonstrates a left skewed distribution of data for the variable TrV.  \
+
+**Distribution of Tm_use_total**  
+
+```{r Tm_use_total, echo=FALSE}
+ggplot(data = df_nonTOT_clean) +
+  geom_histogram(mapping = aes(x = Tm_use_total), colour = "black", fill = "dodgerblue")
+```
+
+The graph above demonstrates a slightly right skewed distribution of data for the variable Tm_use_total.  \
+\
+
+### Relationship of Data
+\
+**Relationship between PTS_per_min and WinP_Tm**
+
+```{r source_bulls_multi_reg1, include=FALSE, cache = TRUE}
+source("funcs/Bulls_multiple_linear_regression_final.R", local = TRUE)
+```
+
+
+```{r PTS_per_min_v_WinP_Tm, echo=FALSE}
+ggplot(data = df_nonTOT_clean, aes(x = PTS_per_MP, y = WinP_Tm)) + 
+  geom_point(colour = "dodgerblue") +
+  geom_smooth(method = "lm", colour = "magenta", se = FALSE) +
+  geom_hline(yintercept = 50, colour = "black", linetype = "dashed")
+```
+
+Increased points per mintue shows greater winning percentage, demonstrating a strong positive relationship.  \
+\
+As points per min increases, there is an increase in team winning percentage.  \
+\
+**Question** \
+\
+What contributes to success in basketball?  \
+\
+What variables contribute to winning percentage?  \
+\
+**Relationship of eFGp and PTS_per_MP**  
+
+```{r eFGp_v_PTS_per_min, echo=FALSE}
+df_nonTOT_clean %>%
+  ggplot(mapping = aes(x = eFGp, y = PTS_per_MP)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+There is a moderate positive linear relationship between effective field goal percentage and points per minute.  \
+\
+**Relationship of EFF and PTS_per_MP**  \
+\
+```{r EFF_v_PTS_per_MP, echo=FALSE}
+df_nonTOT_clean %>%
+  ggplot(mapping = aes(x = EFF, y = PTS_per_MP)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+There is a strong positive linear relationship between efficiency and points per minute.  \
+\
+**Relationship of TRB_MP and PTS_per_MP**  \
+\
+```{r TRB_MP_v_PTS_per_MP, echo=FALSE}
+df_nonTOT_clean %>%
+  ggplot(mapping = aes(x = TRB_MP, y = PTS_per_MP)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+There is a moderate positive linear relationship between total rebounds per minute and points per minute.  \
+\
+**Relationship of TrV and PTS_per_MP**  \
+\
+```{r TrV_v_PTS_per_MP, echo=FALSE}
+df_nonTOT_clean %>%
+  ggplot(mapping = aes(x = TrV, y = PTS_per_MP)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+There is a strong positive linear relationship between trade value and points per minute.  \
+\
+**Relationship of Tm_use_total and PTS_per_MP** \
+\
+```{r Tm_use_v_PTS_per_MP, echo=FALSE}
+df_nonTOT_clean %>%
+  ggplot(mapping = aes(x = Tm_use_total, y = PTS_per_MP)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+There is a very strong positive linear relationship between team use total and points per minute.  \
+\
+**Correlation co-efficient of PTS_per_MP and WinP_Tm**  \
+\
+
+```{r corr_coeff_PTS_per_min_v_WinP_Tm, echo=FALSE}
+with(df_nonTOT_clean, cor(x = PTS_per_MP, y = WinP_Tm))
+```
+\
+The correlation co-efficient = 0.055 suggesting a moderate-strong positive correlation between points per minute and team winning percentage, as 0.055 is approaching the value of 1.  \
+\
+**Simple Linear Regression**  \
+\
+```{r SLR_PTS_per_min_v_WinP_Tm, echo=FALSE}
+fit <- lm(WinP_Tm ~ PTS_per_MP, data = df_nonTOT_clean)
+tidy(fit,conf.int = TRUE)
+```
+\
+The intercept co-efficient = 47.7, meaning that when the team winning percentage is 0, the expected points per minute = 47.7. This does not make much practical sense, but is a starting point for the model.  \
+\
+The slope co-efficient = 5.85, meaning that for every 1 unit that points per min is increased, expected points per minutes increase by 5.85.  \
+\
+The r squared value = -0.0003225, meaning that 0.03225% of the variance in team winning percentage is explained by the variance in points per minute.  \
+\
+**Summary of Exploratory Analysis**  \
+\
+This simple linear regression demonstrates that PTS_per_MP is correlated with WinP_Tm in the NBA. Further analysis to determine the contribution of the following explanatory variables (eFGp, EFF, TRB_MP, TrV, and Tm_use_total) is required through the use of a multiple linear regression.  \
+\
+All assumptions are satisfied and a multiple linear regression appears to be a robust statistical test to investigate to correlations in this dataset.  \
+\
+The dataset will be filtered to contain players who played in 40 or more games during the season, as they will be of move interest to the selectors, with players with a higher team usage figure, are usually the better performing players. There was no difference in the simple linear regression when players who played 20 or more games.  \
+<br>
+
+```{r source_bulls_multi_reg2, include=FALSE, cache = TRUE}
+source("funcs/Bulls_multiple_linear_regression_final.R", local = TRUE)
+```
+
+## Data Modelling and Results
+\
+A multiple linear regression was conducted to investigate to correlations in this dataset.  \
+\
+The dataset was filtered to contain players who played in 40 or more games during the season, as they are of move interest to the selectors.  \
+\
+The response variable selected was PTS_per_min, with eFGp, TRB_MP, Tm_use_total, EFF and TrV selected as the explanatory variables. These variables were selected in the analysis as they are important basketball specific metrics, taking into account a player's age, specific performance metrics (offensive and defensive) and team useage and contribution.  \
+\
+**Pairs plot for visualising relationship between PTS_per_min and eFGp, TRB_MP, Tm_use_total, EFF and TrV**  \
+\
+
+```{r pairs_plot, echo=FALSE}
+pairs(formula = ~ PTS_per_MP + eFGp + TRB_MP + Tm_use_total + EFF + TrV, data = df_nonTOT_clean)
+```
+\
+**Multiple Linear Regression**  \
+\
+```{r MLR, echo=FALSE}
+lm_bb_hr <- lm(PTS_per_MP ~  eFGp + TRB_MP + Tm_use_total + EFF + TrV, data = df_nonTOT_clean)
+tidy(lm_bb_hr, conf.int = TRUE)
+```
+\
+For every 1 increase in eFGp, PTS_per_MP will increase by 0.699.  \
+For every 1 increase in TRB_MP, PTS_per_MP will decrease by -0.0330.  \
+For every 1 increase in Tm_use_total,PTS_per_MP will increase by 2.39.  \
+For every 1 increase in EFF, PTS_per_min will increase by 0.00000965.  \
+For every 1 increase in TrV, PTS_per_min will decrease by -0.00000803.  \
+\
+**Linear Fit Model**  \
+\
+```{r L_fit, echo=FALSE}
+fit <- lm(PTS_per_MP ~ eFGp + TRB_MP + Tm_use_total + EFF + TrV,
+          data = df_nonTOT_clean)
+tidy(fit, conf.int = TRUE)
+```
+\
+\
+**Assumption and Model Testing**  \
+\
+```{r avplot, echo=FALSE}
+car::avPlots(fit)
+```
+\
+\
+```{r vif, echo=FALSE}
+car::vif(fit)
+```
+\
+\
+```{r sqrt, echo=FALSE}
+sqrt(car::vif(fit))
+```
+\
+Values close to 5 for VIF indicates that there would be high multicollinearity.  \
+\
+These values are close to one, so no multicollinearity exists.  \
+\
+\
+**Model Testing**  \
+\
+```{r Tm_use_total_v_PTS_per_MP, echo=FALSE}
+ggplot(model_testing, aes(exp_PTS_per_MP, PTS_per_MP, label = Tm, colour = Pos)) +
+  geom_point(alpha = 0.5) +
+  geom_text(nudge_x = 0.105, cex = 3) +
+  geom_abline(linetype = "dashed", colour = "magenta")
+```
+\
+If all predictions were 100% accurate, all data points would line up on the line.  \
+Data points that fall above the line are under estimated by the model.  \
+Data points that fall below the line are over estimated by the model.  \
+<br>
+
+## Chicago Bulls Team Selection Player Recommendations
+\
+In the 2018/2019 season Chicago Bulls finished 27th out of 30 teams in the NBA, with a winning percentage of 26% with points per minute average = 0.41. From the statistical analysis it is evident that points per minute correlates with winning percentage. Factors that are strongly linked to success in basketball (scoring points) include: a player’s efficiency rating (EFF), effective field goal percentage (eFGp) and total rebounds per minute (TRB_MP). These metrics take into account the total player, including their age and offensive and defensive metrics to give an overall player efficiency on court, as well as their field goal percentage and total rebounds per minute. Other player metrics including trade value (TrV) and team usage (Tm_use_total) are also important to consider. The team usage metric is provides insight into how much the team uses each player. It is important to consider this metric in combination with the other metrics, as even though a player may have a high team usage figure, their overall efficiency rating must still be high to indicate that this player is a top performer.  \
+\
+It is evident that teams who have a high points per minute average, usually win 41 or more games per season, and in theory have a strong chance of making the play-offs. The statistical model that forms the basis of this report, and informs the following recommendations suggests that in theory if the team winning percentage metric was achieved, then based on the modelling, and previous season’s data, the team would make the play offs, with an average winning percentage of 50%, with the team winning 41 or more games.  \
+**Predicted Value Formula for PTS_per_MP**  \
+\
+eFG = 0.55  \
+TRB_MP = 0.2  \
+Tm_use_total = 0.2  \
+EFF = 1500  \
+TrV = 600  \
+\
+```{r pred_mod, echo=FALSE}
+-0.382 + 0.699 * 0.55 + -0.0330 * 0.2 + 2.39 * 0.20 + 0.00000965 * 1500 + -0.00000803 * 600
+```
+
+**Team Winning Percentage and Expected Point Score**  \
+\
+```{r Tm_WinP_v_PTS, echo=FALSE}
+ggplot(model_testing, aes(x = Tm_exp_Pts_per_MP, y = WinP_Tm, label = Tm)) +
+  geom_point(alpha = 0.3) +
+  geom_point(data = model_testingTM_plot, aes(x = Tm_Pts_per_MP, y = WinP_Tm, colour = "", fill = "")) +
+  geom_text(nudge_x = .00002, nudge_y = 1, cex = 3) +
+  labs(title = "Team Win Percentage vs Expected points per minute", 
+     subtitle = "Teams with increased pts/min have increased winning percentages", 
+     colour = "Actual pts/min",
+     fill = "Expected pts/min") +
+  xlab("Pts per minute (Expected/Actual)") +
+  ylab("Win Percentage") +
+  scale_colour_manual(values = c("magenta")) +
+  theme_light()
+```
+\
+There is a strong association between teams that have a high points per minute average and winning percentage, with these teams usually winning,on average 40 games per season.  \
+This graph demonstrates that on average, teams that have a winning percentage of 51%, have an expected points score of 45.05 points.   \
+\
+
+
+```{r reload2, include=FALSE, cache = TRUE}
+source("funcs/Bulls_multiple_linear_regression_final.R", local = TRUE)
+```
+
+
+```{r ggsal, include=FALSE}
+library(plotly)
+
+gg_sal <- ggplot(data = model_testing, aes(x = salary/1000000, y = exp_PTS_per_MP, color = Pos, label = "Salary (Millions)")) + 
+  geom_point() 
+```  
+  
+  
+```{r ggsal2, echo=FALSE} 
+  ggplotly(gg_sal)
+```
+
+This graph demonstrates the expected points per minute per position with their respective salaries.  \
+\
+Based on the predictive modelling, the below five players are recommended as the starting player roster for the 2019 NBA season. The team budget for a total of 15 players is 118 million dollars, with priority towards the top five starting players. To goal selecting an effective player roster is to increase the team’s average points per minute, as this metric is correlated to a team’s winning percentage. Increasing Chicago Bull’s winning percentage will progress the team through the NBA team ranks, with the potential of making the play-offs and also increasing their player budget for subsequent seasons. The five starting player’s salaries total 63, 074, 106 dollars, and so there is 54, 925, 894 dollars left to spend on the remaining 10 players for the season, which leaves an average salary of 5, 492, 589 dollars for each player.  \
+\
+**Center: Nikola Vucevic - 12, 750, 000 dollars**  \
+\
+Nikola appears to be very good value, with a salary of 12, 750,000 dollars. He appears to be an integral team player as he has played almost every game this season (80), and has a high team usage total (0.2799). He has maintained a higher efficiency rating (2399.012), a high effective field goal percentage (0.5487), a high points per minute figure (0.6633), and high points scored per game (20.8125). Nikola also has a high total rebounds per minute figure (0.3825). These metrics are important given his position, as a centre is required to shoot and score points, and win rebounds, whilst also blocking their opponents shot attempts.[@Fromal2012-yb]  \
+\
+**Power Forward: Julius Randle - 8, 641, 000 dollars**  \
+\
+Julius appears to be a very good value player for his salary (8, 641, 000 million dollars) in comparison to other power forwards in the league, with a good trade value (695.88 dollars). Julius has played in 73 games this season, and has a high team usage total (0.278). He has a high number of points per game (21.4384) which is consistent amongst top power forward players, and has an effective field goal percentage of 0.5551 and 0.7012 points per minute, and these metrics are important in terms of his role within the team, shooting from longer range as well as playing near the basket, and attempting to win rebounds.[@Fromal2012-yb] Julius also demonstrates a high number of total rebounds per min (0.2841).  \
+\
+**Point Guard: Kemba Walker - 12, 000, 000 dollars**  \
+\
+Kemba Walker appears to be a good value point guard for his salary of 12, 000, 000 dollars, and has a trade value of 593.353 dollars. He has played in every game this season, with a high team usage total (0.3153). Despite the role of a point guard to be in defense and to coordinate the team’s offensive play, he has an effective field goal percentage of 0.5113, with 25.6341 points per game (0.7342 points per minute).[@Fromal2012-yb] His total rebounds per minute equal 0.1261, which is above average compared to other point guards in the NBA.  \
+\
+**Small Forward: Kawhi Leonard - 23, 114, 066 dollars**  \
+\
+Kawhi Leonard would be a good choice to start in the small forward position, and whilst a large proportion of the budget would be allocated to him (23,114, 066), his performance metrics suggest that he is a worthy investment compared to other small forwards with similar statistics. Kawhi has a very high points per game score (26.6) and points per minute figure (0.7824) compared to other small forwards with a similar salary. The small forward must be a versatile player and Kawki has started in a large amount of games this season (60), with a high team usage total (0.3029).[@Fromal2012-yb] Demonstrating defensive versatility Kawhi has a high total rebound figure of 0.2152 compared to other small forwards.  \
+\
+**Shooting Guard: Luka Doncic - 6, 569, 040 dollars**  \
+\
+Luka Doncic appears to be an extremely good value young shooting guard at 19 years of age, and so has plenty of years left in his career. Despite his young age and comparatively low salary (6, 569, 040 dollars), he has a very high efficiency rating (1797.569). With the shooting guard usually being the best shooter on the team, Luka demonstrates high points per game figures (21.1944) and points per minute figures (0.6583), with an effective field goal percentage of 0.4975.[@Fromal2012-yb] Despite these player metrics, he has a good trade value of 742.2696. He has played 72 games this season, and has a high team use total of 0.3053.  \
+<br>
+
+## Limitations  
+\
+This predictive model slightly overestimated the winning percentage for the Chicago Bulls team, and thus there are some limitations that exist with this project that may have influenced the results and hence the player recommendations. There is inherent bias present within the predictive model, whereby explanatory variables that demonstrate correlation are included in the modelling and analysis. Using known calculations, and condensing the data points are another limitation of the analysis. In terms of team selection, there is an element of survivorship, where we are selecting the best of the best players. Players who played multiple positions and for multiple teams during the 2018/2019 season were excluded from the analysis, and this perhaps has impacted on the figures, as even though their individual data was removed these players would still have had an impact in teams’ performances. The data set was filtered to display players who had played for 40 or more games, which is equal to 50% of the games for the season, as it was evident that the better performing players in each position played the vast majority of the 82 games of the season. There were some team specific metrics included in the analysis, and this could influence the perception of the individual player performance, as there could be a really good player, playing on a poorly performing team, or an average player playing on one of the top teams, which may impact on their metrics.  \
+<br>
+
+## Summary  
+\
+Based on the statistical analysis and model testing the following five players are recommended for the Chicago Bulls starting team for the 2019-2020 NBA season:  \
+\
+Center: Nikola Vucevic  \
+Power Forward: Julius Randle  \
+Point Guard: Kemba Walker  \
+Small Forward: Kawhi Leonard  \
+Shooting Guard: Luka Doncic  \
+\
+It is evident that if the Chicago Bulls can increase their points per minute on average to 0.48 points per minute, then they will most likely make the play-offs, as with a higher points per minute average,they will likely increase their winning percentage to 50%. Based on the player combination above it gives the Chicago Bulls the best possible chance of making the play-offs, having a successful season.
